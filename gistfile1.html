@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluffy's Butterfly Chase</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
+        }
+        #gameCanvas {
+            border: 10px solid #4CAF50;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game objects
+        const fluffy = {
+            x: 400,
+            y: 500,
+            width: 60,
+            height: 40,
+            speed: 5
+        };
+
+        const butterflies = [];
+
+        // Game state
+        let score = 0;
+        let timeLeft = 60;
+
+        // Key states
+        const keys = {};
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            // Move Fluffy
+            if (keys['ArrowLeft'] && fluffy.x > 0) fluffy.x -= fluffy.speed;
+            if (keys['ArrowRight'] && fluffy.x < canvas.width - fluffy.width) fluffy.x += fluffy.speed;
+            if (keys['ArrowUp'] && fluffy.y > 0) fluffy.y -= fluffy.speed; // Simple jump for now
+
+            // Update butterflies
+            if (Math.random() < 0.02 && butterflies.length < 10) {
+                butterflies.push({
+                    x: Math.random() * canvas.width,
+                    y: 0,
+                    size: 20 + Math.random() * 10,
+                    speed: 1 + Math.random() * 2,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`
+                });
+            }
+
+            butterflies.forEach((butterfly, index) => {
+                butterfly.y += butterfly.speed;
+                if (butterfly.y > canvas.height) {
+                    butterflies.splice(index, 1);
+                }
+                // Simple collision detection
+                if (fluffy.x < butterfly.x + butterfly.size &&
+                    fluffy.x + fluffy.width > butterfly.x &&
+                    fluffy.y < butterfly.y + butterfly.size &&
+                    fluffy.y + fluffy.height > butterfly.y) {
+                    butterflies.splice(index, 1);
+                    score++;
+                }
+            });
+
+            // Update time
+            if (timeLeft > 0) {
+                timeLeft -= 1/60; // Assuming 60 FPS
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw sky
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw sun
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(50, 50, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw grass
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(0, 500, canvas.width, 100);
+
+            // Draw flowers
+            for (let i = 0; i < 10; i++) {
+                drawFlower(Math.random() * canvas.width, 520 + Math.random() * 60);
+            }
+
+            // Draw Fluffy
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.ellipse(fluffy.x + fluffy.width/2, fluffy.y + fluffy.height/2, fluffy.width/2, fluffy.height/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Fluffy's face
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(fluffy.x + fluffy.width * 0.7, fluffy.y + fluffy.height * 0.3, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(fluffy.x + fluffy.width * 0.8, fluffy.y + fluffy.height * 0.3, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw butterflies
+            butterflies.forEach(butterfly => {
+                drawButterfly(butterfly.x, butterfly.y, butterfly.size, butterfly.color);
+            });
+
+            // Draw score and time
+            ctx.fillStyle = 'black';
+            ctx.font = 'bold 24px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+            ctx.fillText(`Time: ${Math.ceil(timeLeft)}`, canvas.width - 120, 30);
+        }
+
+        function drawFlower(x, y) {
+            ctx.fillStyle = 'yellow';
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'pink';
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.ellipse(x + Math.cos(i * Math.PI * 2/5) * 10, 
+                            y + Math.sin(i * Math.PI * 2/5) * 10, 
+                            7, 3, i * Math.PI * 2/5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawButterfly(x, y, size, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.ellipse(x, y, size/2, size/4, Math.PI/4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(x, y, size/2, size/4, -Math.PI/4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
